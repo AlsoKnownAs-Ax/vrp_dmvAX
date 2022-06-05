@@ -10,7 +10,7 @@ A dmv school i made a while ago, the code is prbly a mess , but i hope u will li
 
 ## Make sure you replace the vRP.getInventoryItemAmount(...,"permisc") with your driver license item name
 
-##
+
 local choice_askPermis = {function(player,choice)
   local user_id = vRP.getUserId(player)
   vRPclient.getNearestPlayer(player,{10},function(nplayer)
