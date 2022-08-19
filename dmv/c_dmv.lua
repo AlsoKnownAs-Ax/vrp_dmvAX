@@ -18,21 +18,120 @@ finishCarRoute = {}
 finishBlip = nil
 CarBlip = nil
 CarStopsBlip2 = nil
+started = false
 
+--------------------- Native Storage ---------------------
+InvokeNative = Citizen.InvokeNative
+PointerValueIntInitialized = Citizen.PointerValueIntInitialized
+Wait = Citizen.Wait
+CreateThread = Citizen.CreateThread
+--------------------- Native Storage ---------------------
 
 okoknotify = AxConfig.UseOkOkNotify
 
 function vRPaxC.deleteTheCar()
 	if(DoesEntityExist(theCar))then
-		Citizen.InvokeNative(0xEA386986E786A54F, Citizen.PointerValueIntInitialized(theCar))
+		InvokeNative(0xEA386986E786A54F, PointerValueIntInitialized(theCar))
 		theCar = nil
+		started = false
 	end
 end
 
 function vRPaxC.CarPopulateData(CarSpawns, CarLocs, finishTrash)
+	started = true
 	CarSpawnLocs = CarSpawns
 	CarStopsLocs = CarLocs
 	finishCarRoute = finishTrash
+	CreateThread(function()
+		while started do
+			Wait(0)
+			local ped = PlayerPedId()	
+			local pos = GetEntityCoords(ped, true)	
+			if((not DoesEntityExist(theCar)) or (IsEntityDead(theCar))) and (hasCarRouteStarted)then
+				vRPaxC.stopCarRoute()
+				theCar = nil
+			end
+			if(atCarStop)then
+				axdmv_drawTxt("~y~[DMV] ~g~Asteapta la semafor...",1,1,0.5,0.8,0.8,255,255,255,255)
+			end
+			if(theCar ~= nil)then
+				if(GetVehiclePedIsIn(ped, false) == theCar) and (GetPedInVehicleSeat(theCar, -1) == ped) then
+					if(hasCarRouteStarted == false)then
+						vRPaxC.startCarRoute()
+					end
+					if(tonumber(#CarStopsLocs) > tonumber(CarCheckpoint))then
+						if(#CarStopsLocs >= CarCheckpoint+1)then
+							if(CarStopsLocs[CarCheckpoint+1][4] == true)then
+								DrawMarker(1, CarStopsLocs[CarCheckpoint+1][1], CarStopsLocs[CarCheckpoint+1][2], CarStopsLocs[CarCheckpoint+1][3]-1.0, 0, 0, 0, 0, 0, 0, 2.0, 2.0, 200.0, 0, 255, 0, 180, 0, 0, 0, 0)
+							else
+								DrawMarker(1, CarStopsLocs[CarCheckpoint+1][1], CarStopsLocs[CarCheckpoint+1][2], CarStopsLocs[CarCheckpoint+1][3]-1.0, 0, 0, 0, 0, 0, 0, 2.0, 2.0, 200.0, 255, 255, 0, 180, 0, 0, 0, 0)
+							end
+						end
+						if(CarStopsLocs[CarCheckpoint][4] == true)then
+							DrawMarker(1, CarStopsLocs[CarCheckpoint][1], CarStopsLocs[CarCheckpoint][2], CarStopsLocs[CarCheckpoint][3]-1.0, 0, 0, 0, 0, 0, 0, 5.0, 5.0, 200.0, 0, 255, 0, 180, 0, 0, 0, 0)
+							if #(pos - vector3(CarStopsLocs[CarCheckpoint][1],CarStopsLocs[CarCheckpoint][2],CarStopsLocs[CarCheckpoint][3])) < 8.0 then
+								if(atCarStop == false)then
+									vRPaxC.stopAtCarStop(true)
+								end
+							else
+								atCarStop = false
+							end
+						else
+							DrawMarker(1, CarStopsLocs[CarCheckpoint][1], CarStopsLocs[CarCheckpoint][2], CarStopsLocs[CarCheckpoint][3]-1.0, 0, 0, 0, 0, 0, 0, 5.0, 5.0, 200.0, 255, 255, 0, 180, 0, 0, 0, 0)
+							if #(pos - vector3(CarStopsLocs[CarCheckpoint][1],CarStopsLocs[CarCheckpoint][2],CarStopsLocs[CarCheckpoint][3])) < 8.0 then
+								vRPaxC.stopAtCarStop(false)
+							end
+						end
+					end
+					if(CarCheckpoint == #CarStopsLocs)then
+						if(finishBlip == nil)then
+							finishBlip = AddBlipForCoord(finishCarRoute[1], finishCarRoute[2], finishCarRoute[3])
+							SetBlipSprite(finishBlip, 270)
+							SetBlipColour(finishBlip, 15)
+							SetBlipAsShortRange(finishBlip, false)
+						end
+						DrawMarker(1, finishCarRoute[1], finishCarRoute[2], finishCarRoute[3]-1.0, 0, 0, 0, 0, 0, 0, 5.0, 5.0, 200.0, 0, 255, 0, 180, 0, 0, 0, 0)
+						if #(pos - vector3(finishCarRoute[1],finishCarRoute[2],finishCarRoute[3])) < 5.0 then
+							axdmv_DisplayHelpText("Apasa ~INPUT_CONTEXT~ pentru a termina ~o~Testul Auto")
+							if(IsControlJustReleased(1, 51))then
+								vRPaxC.finishCarRoute(CarCheckpoint)
+							end
+						end
+					end
+					if(DoesBlipExist(CarBlip))then
+						RemoveBlip(CarBlip)
+						CarBlip = nil
+					end
+				else
+					axdmv_drawTxt("~y~[DMV] ~r~Intoarce-te la masina pentru a continua testul...",1,1,0.5,0.8,0.8,255,255,255,255)
+					if(CarBlip == nil)then
+						CarBlip = AddBlipForEntity(theCar)
+						SetBlipSprite(CarBlip, 227)
+						SetBlipColour(CarBlip, 1)
+						SetBlipAsShortRange(CarBlip, false)
+					end
+				end
+			else
+				if(hasCarRouteStarted)then
+					vRPaxC.stopCarRoute()
+				end
+				if(CarSpawnLocs ~= nil)then
+					for i, v in pairs(CarSpawnLocs) do
+						if #(pos - vector3(v[1],v[2],v[3])) < 30.0 then
+							DrawText3D(v[1], v[2], v[3]+0.1, "~y~Test DMV", 1.2)
+							DrawMarker(36, v[1], v[2], v[3]-0.5, 0, 0, 0, 0, 0, 0, 0.7, 0.7, 0.7, 94, 94, 94, 255, 0, 0, 0, 1)
+							if #(pos - vector3(v[1],v[2],v[3])) < 2.0 then
+								axdmv_DisplayHelpText("Apasa ~INPUT_CONTEXT~ pentru a incepe testul")
+								if(IsControlJustReleased(1, 51))then
+									vRPSax.spawnTheCar({})
+								end
+							end
+						end
+					end
+				end
+			end
+		end
+	end)	
 end
 
 function vRPaxC.spawnTheCar()
@@ -41,13 +140,13 @@ function vRPaxC.spawnTheCar()
 		vehicle = GetHashKey(AxConfig.DmvCarId)
 		RequestModel(vehicle)
 		while not HasModelLoaded(vehicle) do
-			Citizen.Wait(0)
+			Wait(0)
 		end
 		theCar = CreateVehicle(vehicle, coords.x, coords.y, coords.z+0.5, 213.70028686523, true, false)
 		SetVehicleOnGroundProperly(theCar)
 		SetEntityInvincible(theCar, false)
 		SetPedIntoVehicle(PlayerPedId(), theCar, -1)
-		Citizen.InvokeNative(0xAD738C3085FE7E11, theCar, true, true) -- set as mission entity
+		InvokeNative(0xAD738C3085FE7E11, theCar, true, true) -- set as mission entity
 		SetVehicleHasBeenOwnedByPlayer(theCar, true)
 		SetModelAsNoLongerNeeded(vehicle)
 	end
@@ -128,6 +227,7 @@ function vRPaxC.stopCarRoute()
 	end
 	vRPSax.stopCarRoute({})
 	atCarStop = false
+	started = false
 end
 
 
@@ -153,6 +253,7 @@ function vRPaxC.finishCarRoute(route)
 	atCarStop = false
 	vRPaxC.deleteTheCar()
 	vRPSax.DaiPermisuMosule({route})
+	started = false
 end
 
 function vRPaxC.stopAtCarStop(isCarStop)
@@ -171,7 +272,6 @@ function vRPaxC.stopAtCarStop(isCarStop)
 					atCarStop = false
 					if(#CarStopsLocs > CarCheckpoint)then
 						vRPaxC.nextCarStop()
-						--vRP.notify({"[DMV] ~g~S-a facut verde! Poti merge mai departe!"})
 						if okoknotify then
 							exports['okokNotify']:Alert("[DMV]", "S-a facut verde! Poti merge mai departe!", 3000, 'success')
 						else
@@ -200,102 +300,3 @@ function vRPaxC.stopAtCarStop(isCarStop)
 		end
 	end
 end
-
-
-Citizen.CreateThread(function()
-	while true do
-		Wait(0)
-		local ped = PlayerPedId()	
-		local pos = GetEntityCoords(ped, true)	
-		if((not DoesEntityExist(theCar)) or (IsEntityDead(theCar))) and (hasCarRouteStarted)then
-			vRPaxC.stopCarRoute()
-			theCar = nil
-		end
-		if(atCarStop)then
-			axdmv_drawTxt("~y~[DMV] ~g~Asteapta la semafor...",1,1,0.5,0.8,0.8,255,255,255,255)
-		end
-		if(theCar ~= nil)then
-			if(GetVehiclePedIsIn(ped, false) == theCar) and (GetPedInVehicleSeat(theCar, -1) == ped) then
-				if(hasCarRouteStarted == false)then
-					vRPaxC.startCarRoute()
-				end
-				if(tonumber(#CarStopsLocs) > tonumber(CarCheckpoint))then
-					if(#CarStopsLocs >= CarCheckpoint+1)then
-						if(CarStopsLocs[CarCheckpoint+1][4] == true)then
-							DrawMarker(1, CarStopsLocs[CarCheckpoint+1][1], CarStopsLocs[CarCheckpoint+1][2], CarStopsLocs[CarCheckpoint+1][3]-1.0, 0, 0, 0, 0, 0, 0, 2.0, 2.0, 200.0, 0, 255, 0, 180, 0, 0, 0, 0)
-						else
-							DrawMarker(1, CarStopsLocs[CarCheckpoint+1][1], CarStopsLocs[CarCheckpoint+1][2], CarStopsLocs[CarCheckpoint+1][3]-1.0, 0, 0, 0, 0, 0, 0, 2.0, 2.0, 200.0, 255, 255, 0, 180, 0, 0, 0, 0)
-						end
-					end
-					if(CarStopsLocs[CarCheckpoint][4] == true)then
-						DrawMarker(1, CarStopsLocs[CarCheckpoint][1], CarStopsLocs[CarCheckpoint][2], CarStopsLocs[CarCheckpoint][3]-1.0, 0, 0, 0, 0, 0, 0, 5.0, 5.0, 200.0, 0, 255, 0, 180, 0, 0, 0, 0)
-						if(GetDistanceBetweenCoords(pos.x, pos.y, pos.z, CarStopsLocs[CarCheckpoint][1], CarStopsLocs[CarCheckpoint][2], CarStopsLocs[CarCheckpoint][3], true) < 8.0)then
-							if(atCarStop == false)then
-								vRPaxC.stopAtCarStop(true)
-							end
-						else
-							atCarStop = false
-						end
-					else
-						DrawMarker(1, CarStopsLocs[CarCheckpoint][1], CarStopsLocs[CarCheckpoint][2], CarStopsLocs[CarCheckpoint][3]-1.0, 0, 0, 0, 0, 0, 0, 5.0, 5.0, 200.0, 255, 255, 0, 180, 0, 0, 0, 0)
-						if(GetDistanceBetweenCoords(pos.x, pos.y, pos.z, CarStopsLocs[CarCheckpoint][1], CarStopsLocs[CarCheckpoint][2], CarStopsLocs[CarCheckpoint][3], true) < 8.0)then
-							vRPaxC.stopAtCarStop(false)
-						end
-					end
-				end
-				if(CarCheckpoint == #CarStopsLocs)then
-					if(finishBlip == nil)then
-						finishBlip = AddBlipForCoord(finishCarRoute[1], finishCarRoute[2], finishCarRoute[3])
-						SetBlipSprite(finishBlip, 270)
-						SetBlipColour(finishBlip, 15)
-						SetBlipAsShortRange(finishBlip, false)
-					end
-					DrawMarker(1, finishCarRoute[1], finishCarRoute[2], finishCarRoute[3]-1.0, 0, 0, 0, 0, 0, 0, 5.0, 5.0, 200.0, 0, 255, 0, 180, 0, 0, 0, 0)
-					if(GetDistanceBetweenCoords(pos.x, pos.y, pos.z, finishCarRoute[1], finishCarRoute[2], finishCarRoute[3], true) < 5.0)then
-						axdmv_DisplayHelpText("Apasa ~INPUT_CONTEXT~ pentru a termina ~o~Testul Auto")
-						if(IsControlJustReleased(1, 51))then
-							vRPaxC.finishCarRoute(CarCheckpoint)
-						end
-					end
-				end
-				if(DoesBlipExist(CarBlip))then
-					RemoveBlip(CarBlip)
-					CarBlip = nil
-				end
-			else
-				axdmv_drawTxt("~y~[DMV] ~r~Intoarce-te la masina pentru a continua testul...",1,1,0.5,0.8,0.8,255,255,255,255)
-				if(CarBlip == nil)then
-					CarBlip = AddBlipForEntity(theCar)
-					SetBlipSprite(CarBlip, 227)
-					SetBlipColour(CarBlip, 1)
-					SetBlipAsShortRange(CarBlip, false)
-				end
-			end
-		else
-			if(hasCarRouteStarted)then
-				vRPaxC.stopCarRoute()
-			end
-			if(CarSpawnLocs ~= nil)then
-				for i, v in pairs(CarSpawnLocs) do
-					if(theBlips[i] == nil)then
-						theBlips[i] = AddBlipForCoord(v[1], v[2], v[3])
-						SetBlipSprite(theBlips[i], 227)
-						SetBlipColour(theBlips[i], 2)
-						SetBlipAsShortRange(theBlips[i], true)
-					end
-					if(GetDistanceBetweenCoords(pos.x, pos.y, pos.z, v[1], v[2], v[3], true) < 30.0)then
-						DrawText3D(v[1], v[2], v[3]+0.1, "~y~Test DMV", 1.2)
-						DrawMarker(36, v[1], v[2], v[3]-0.5, 0, 0, 0, 0, 0, 0, 0.7, 0.7, 0.7, 94, 94, 94, 255, 0, 0, 0, 1)
-						if(GetDistanceBetweenCoords(pos.x, pos.y, pos.z, v[1], v[2], v[3], true) < 2.0)then
-							axdmv_DisplayHelpText("Apasa ~INPUT_CONTEXT~ pentru a incepe testul")
-							if(IsControlJustReleased(1, 51))then
-								vRPSax.spawnTheCar({})
-							end
-						end
-					end
-				end
-			end
-		end
-	end
-end)
-
