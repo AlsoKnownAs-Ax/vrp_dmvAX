@@ -5,9 +5,9 @@
 -------------------------------------------------------------------------
 --[[
 
-	CarSpawnLocs = Locul de unde iei masina pentru testul auto
-	CarLoadLocs = Locul unde sunt CK pentru DMV ( false inseamna ca nu este semafor ,implicit true inseamna ca trb sa astepti la semafor)
-	finishCarPoint = Locul unde termini
+	CarSpawnLocs = Car Spawn Location
+	CarLoadLocs = CK`s Location ( false = Normal CK , true == Wait at the traffic light)
+	finishCarPoint = Finish Point
 
 ]]
 
@@ -62,6 +62,9 @@ function vRPax.executeDMVSchool(thePlayer)
 	local user_id = vRP.getUserId({thePlayer})
 	vRPCax.CarPopulateData(thePlayer, {CarSpawnLocs, CarLoadLocs, finishCarPoint})
 	started[user_id] = 1
+	if AxConfig.VirtualWolrd then
+		SetPlayerRoutingBucket(thePlayer,25)
+	end
 end
 
 function vRPax.spawnTheCar()
@@ -93,6 +96,9 @@ function vRPax.stopCarRoute()
 	if(started[user_id] == 1) and (CarDrivers[user_id] ~= nil)then
 		CarDrivers[user_id] = nil
 		started[user_id] = nil
+		if AxConfig.VirtualWolrd then --[[ no reason to invoke the Native if we haven`t set him in VR]]
+			SetPlayerRoutingBucket(thePlayer,0)
+		end
 	end
 end
 
@@ -107,6 +113,9 @@ function vRPax.DaiPermisuMosule(routesDone)
 	end
 	CarDrivers[user_id] = nil
 	started[user_id] = nil
+	if AxConfig.VirtualWolrd then --[[ no reason to invoke the Native if we haven`t set him in VR]]
+		SetPlayerRoutingBucket(thePlayer,0)
+	end
 end
 
 AddEventHandler("vRP:playerLeave",function(user_id, source)
