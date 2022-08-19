@@ -1,8 +1,3 @@
-# vrp_dmvAX
-[Preview] = https://www.youtube.com/watch?v=TYfmZ-0GCl0
-
-A dmv school i made a while ago, the code is prbly a mess , but i hope u will like it. --Ax-
-
 ## Visitor Count
   <img src="https://profile-counter.glitch.me/vrp_dmvAX/count.svg" />
 
@@ -11,6 +6,8 @@ A dmv school i made a while ago, the code is prbly a mess , but i hope u will li
 ## Put This in vrp/modules/police.lua
 
 ## Make sure you replace the vRP.getInventoryItemAmount(...,"permisc") with your driver license item name
+
+# In order for this functions to work you need to download : https://github.com/plesalex100/plesIds
 
 
 local choice_askPermis = {function(player,choice)
