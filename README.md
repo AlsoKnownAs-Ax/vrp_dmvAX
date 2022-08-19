@@ -1,7 +1,7 @@
 ## Visitor Count
   <img src="https://profile-counter.glitch.me/vrp_dmvAX/count.svg" />
 
-
+# Last Update 19/08/2022: Updated the resource to 0.00% Resomn idle and Virtual Wolrd Config
 
 ## Put This in vrp/modules/police.lua
 
