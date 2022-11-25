@@ -13,11 +13,6 @@ description "vRP DMV School by Ax"
 
 author '--Ax-#0018'
 
-dependencies {
-	"vrp",
-	"ghmattimysql",
-}
-
 client_scripts{
 	-- [[ AX-DMV Client Scripts ]] --
 	"lib/Tunnel.lua",
