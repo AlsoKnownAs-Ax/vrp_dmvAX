@@ -71,7 +71,7 @@
         end,"Anuleaza permisul jucatorului apropriat"}
 
 
-## Also add this to the choices in polce.lua from modules
+## Also add this to the choices in police.lua from modules
 
 
               menu["Verifica Permis"] = choice_askPermis
